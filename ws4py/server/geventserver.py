@@ -47,7 +47,12 @@ class WebSocketServer(gevent.pywsgi.WSGIServer):
                             extensions=extensions)
 
 if __name__ == '__main__':
-    def echo_handler(environ, websocket):
+
+    def echo_handler(environ, start_response):
+        if start_response is not None:
+            start_response('400 Bad Request', [])
+            return []
+        websocket = environ['wsgi.websocket']
         try:
             while True:
                 msg = websocket.receive(msg_obj=True)
