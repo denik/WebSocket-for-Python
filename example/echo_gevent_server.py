@@ -9,6 +9,9 @@ HTML = """<html>
     <head>
       <script type='application/javascript' src='https://ajax.googleapis.com/ajax/libs/jquery/1.4.2/jquery.min.js'> </script>
       <script type='application/javascript'>
+
+        try { WebSocket } catch(err) { WebSocket = MozWebSocket; }
+
         $(document).ready(function() {
           var ws = new WebSocket('ws://localhost:9000/ws');
           $(window).unload(function() {
