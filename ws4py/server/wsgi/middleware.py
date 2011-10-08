@@ -61,12 +61,12 @@ class WebSocketUpgradeMiddleware(object):
         self.extensions = extensions
         self.websocket_class = websocket_class
     
-    def __call__(self, environ, start_response):        
+    def __call__(self, environ, start_response):
+        if 'websocket' not in environ.get('HTTP_UPGRADE', '').lower():
+            return self.handle(environ, start_response)
+
         # Initial handshake validation
         try:
-            if 'websocket' not in environ.get('upgrade.protocol', ''):
-                raise HandshakeError("Upgrade protocol is not websocket")
-            
             if environ.get('REQUEST_METHOD') != 'GET':
                 raise HandshakeError('Method is not GET')
             
@@ -125,12 +125,10 @@ class WebSocketUpgradeMiddleware(object):
             headers.append(('Sec-WebSocket-Extensions', ','.join(ws_extensions)))
         
         start_response("101 Web Socket Hybi Handshake", headers)
-        
-        # Build a websocket object and pass it to the handler
-        self.handle(
-            self.websocket_class(
-                environ.get('upgrade.socket'), 
-                ws_protocols, 
-                ws_extensions, 
-                environ), 
-            environ)
+        environ['wsgi.socket.detach'] = True
+        websocket = self.websocket_class(environ['wsgi.socket'],
+                                         ws_protocols,
+                                         ws_extensions,
+                                         environ)
+        environ['wsgi.websocket'] = websocket
+        self.handle(environ, None)
